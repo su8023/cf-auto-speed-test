@@ -258,7 +258,7 @@ interactive_config() {
     read feishu_webhook
 
     # GitHub IP 库
-    default_githubID=$(grep -oP '(?<=githubID=")[^"]*' "$CONFIG_FILE" 2>/dev/null || echo "ansoncloud8")
+    default_githubID=$(grep -oP '(?<=githubID=")[^"]*' "$CONFIG_FILE" 2>/dev/null || echo "su8023")
     echo -n "  GitHub IP 库 ID [${default_githubID}]: "
     read githubID
     githubID="${githubID:-$default_githubID}"
