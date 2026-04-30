@@ -1,134 +1,268 @@
 #!/bin/bash
-# $ ./CDNDomainUpdate.sh cdn xxxx.com xxxx@gmail.com xxxxxxxxxxxxxxx
-export LANG=zh_CN.UTF-8
-auth_email="xxxx@gmail.com"    #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"     #你的主域名 *必填
-record_name="cdn" #二级域名前缀
-###############################################################以下脚本内容，勿动#######################################################################
-area=1 #每个地区更新的IP数量
-#带有二级域名前缀参数
-if [ -n "$1" ]; then 
-    record_name="$1"
-fi
+# Cloudflare Auto Speed Test - CDN Domain Update (Aggregate IPs from multiple regions)
+# Usage: ./CDNDomainUpdate.sh [record_name] [domain] [email] [key]
+# All configs can be set in config.conf, command line args override config
 
-#带有主域名参数
-if [ -n "$2" ]; then 
-    zone_name="$2"
-fi
+set -euo pipefail
 
-#带有CloudFlare账户邮箱参数
-if [ -n "$3" ]; then 
-    auth_email="$3"
-fi
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/config.conf"
 
-#带有CloudFlare账户key参数
-if [ -n "$4" ]; then 
-    auth_key="$4"
-fi
+# Default values
+RECORD_NAME="cdn"
+AREA_PER_REGION=1
 
-record_type="A"     
-#获取zone_id、record_id
-zone_identifier=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-# echo $zone_identifier
-readarray -t record_identifiers < <(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?name=$record_name.$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*')
+# CloudFlare config (from config.conf)
+AUTH_EMAIL=""
+AUTH_KEY=""
+ZONE_NAME=""
 
-record_count=0
-for identifier in "${record_identifiers[@]}"; do
-	# echo "${record_identifiers[$record_count]}"
-	((record_count++))
-done
+# Notification config
+FEISHU_WEBHOOK=""
+TELEGRAM_BOT_TOKEN=""
+TELEGRAM_BOT_USER_ID=""
+TELEGRAM_BOT_API=""
 
-file="./log/${record_name^^}-443.csv"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-if [ -e "$file" ]; then
-    	#echo "$file 存在."
-    	start=2
-	Rows=$((record_count + 1))
- 	result_csv=$file
-  
-  	echo "待更新域名数: $record_count" 
-   	line_count=$(wc -l < "$file")
-    	echo "待处理IP总数: $((line_count - 1))"
-     	if [ "$record_count" -gt "$((line_count - 1))" ]; then
-	        echo "待处理域名数＞待处理IP总数，结束当前脚本."
-	 	echo "请重新运行speed.sh脚本,获取更多${record_name^^}地区待处理IP后再试."
-	        exit 1  # 可以选择适当的退出状态码
-    	fi
-     	echo "待更新域名 ${record_name}.${zone_name}"
-else
-    	#echo "$file 不存在."
-	# 找到所有匹配的文件
-	log_files=(./log/*.csv)
+# Logging functions
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-	# 要排除的元素
-	element_to_exclude="./log/CDN.csv"
-
-	filtered_log_files=()
-	for file in "${log_files[@]}"; do
-	    if [ "$file" != "$element_to_exclude" ]; then
-	        filtered_log_files+=("$file")
-	    fi
-	done
-
-	# 将过滤后的数组重新赋值给 log_files
-	log_files=("${filtered_log_files[@]}")
-	#echo "${log_files[@]}"
-	
-	count=0
-	
-	area_ip() {
-	> ./log/CDN.csv #清空目标文件
-	
-	count=0
-	# 遍历所有文件
-	for file in "${log_files[@]}" 
-	do
-	  # 提取第2行起始内容写入目标文件    
-	  sed -n "2,$((area+1))p" "$file" >> ./log/CDN.csv
-	  ((count++))
-	done
-    	line_count=$(wc -l < ./log/CDN.csv )
-	}
-	
-	area_ip
-
-	while [ $record_count -gt $line_count ]; do
-	  	echo "待更新域名数: $record_count" 
-	  	echo "待处理IP总数: $line_count"
-	  	#echo "record_count 大于 count * area"
-	  	echo "待处理域名数＞待处理IP总数，尝试给每个地区增加1个IP"
-	  	((area++))
-	  	area_ip
-	done
-	
-	echo "待更新域名数: $record_count" 
-	echo "待处理IP总数: $line_count"
-	echo "待更新域名 ${record_name}.${zone_name}"
-	start=1
-	Rows=$record_count
- 	result_csv="log/CDN.csv"
-fi
-
-sed -n "$((start)),$((Rows))p" $result_csv | while read line
-do
-    #echo $record_name$record_count'.'$zone_name
-    #record_identifier=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?name=$record_name"'.'"$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
-	
-    #更新DNS记录
-    update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records/${record_identifiers[$record_count - 1]}" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" --data "{\"type\":\"$record_type\",\"name\":\"$record_name.$zone_name\",\"content\":\"${line%%,*}\",\"ttl\":60,\"proxied\":false}")
-    #反馈更新情况
-	
-    if [[ "$update" != "${update%success*}" ]] && [[ "$(echo $update | grep "\"success\":true")" != "" ]]; then
-      echo $record_name'.'$zone_name'更新为:'${line%%,*}'....成功'
+# Load configuration from config.conf
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        log_info "Loading configuration from $CONFIG_FILE"
+        set -a
+        source "$CONFIG_FILE"
+        set +a
     else
-      echo $record_name'.'$zone_name'更新失败:'$update
+        log_warn "Config file $CONFIG_FILE not found, using defaults"
     fi
-	
-    record_count=$(($record_count-1))    #二级域名序号递减
-    echo $record_count
-    if [ $record_count -eq 0 ]; then
-        break
-    fi
+}
 
-done
+# Parse command line arguments
+parse_args() {
+    [[ -n "$1" ]] && RECORD_NAME="$1"
+    [[ -n "$2" ]] && ZONE_NAME="$2"
+    [[ -n "$3" ]] && AUTH_EMAIL="$3"
+    [[ -n "$4" ]] && AUTH_KEY="$4"
+}
+
+# Feishu webhook notification
+send_feishu_notification() {
+    local message="$1"
+    [[ -z "$FEISHU_WEBHOOK" ]] && return 0
+    
+    log_info "Sending Feishu notification..."
+    local payload="{\"msg_type\":\"text\",\"content\":{\"text\":\"$message\"}}"
+    curl -s -X POST "$FEISHU_WEBHOOK" \
+        -H "Content-Type: application/json" \
+        -d "$payload" \
+        --max-time 20 || log_warn "Feishu notification failed"
+}
+
+# Telegram notification
+send_telegram_notification() {
+    local message="$1"
+    [[ -z "$TELEGRAM_BOT_TOKEN" ]] && return 0
+    
+    local api="${TELEGRAM_BOT_API:-api.telegram.org}"
+    local url="https://${api}/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+    
+    curl -s -X POST "$url" \
+        -d "chat_id=${TELEGRAM_BOT_USER_ID}" \
+        -d "parse_mode=HTML" \
+        -d "text=$message" \
+        --max-time 20 || log_warn "Telegram notification failed"
+}
+
+# Send notification (both Feishu and Telegram)
+send_notification() {
+    local message="$1"
+    send_feishu_notification "$message"
+    send_telegram_notification "$message"
+}
+
+# Get Cloudflare zone and record identifiers
+get_cf_identifiers() {
+    log_info "Getting Cloudflare zone/record identifiers..."
+    
+    # Get zone identifier
+    ZONE_IDENTIFIER=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${ZONE_NAME}" \
+        -H "X-Auth-Email: ${AUTH_EMAIL}" \
+        -H "X-Auth-Key: ${AUTH_KEY}" \
+        -H "Content-Type: application/json" | jq -r '.result[0].id' 2>/dev/null)
+    
+    if [[ -z "$ZONE_IDENTIFIER" || "$ZONE_IDENTIFIER" == "null" ]]; then
+        log_error "Failed to get zone identifier for ${ZONE_NAME}"
+        exit 1
+    fi
+    
+    # Get record identifiers
+    RECORD_IDENTIFIERS=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_IDENTIFIER}/dns_records?name=${RECORD_NAME}.${ZONE_NAME}" \
+        -H "X-Auth-Email: ${AUTH_EMAIL}" \
+        -H "X-Auth-Key: ${AUTH_KEY}" \
+        -H "Content-Type: application/json" | jq -r '.result[].id' 2>/dev/null)
+    
+    RECORD_COUNT=$(echo "$RECORD_IDENTIFIERS" | grep -c . || echo 0)
+    log_info "Found $RECORD_COUNT existing DNS records for ${RECORD_NAME}.${ZONE_NAME}"
+}
+
+# Aggregate IPs from log files
+aggregate_ips() {
+    log_info "Aggregating IPs from log files..."
+    
+    local log_dir="log"
+    mkdir -p "$log_dir"
+    
+    # Check if specific region log exists
+    local specific_log="${log_dir}/${RECORD_NAME^^}-443.csv"
+    
+    if [[ -f "$specific_log" ]]; then
+        log_info "Using specific log: $specific_log"
+        local line_count=$(wc -l < "$specific_log")
+        line_count=$((line_count - 1))
+        
+        if [[ "$RECORD_COUNT" -gt "$line_count" ]]; then
+            log_error "Record count ($RECORD_COUNT) > available IPs ($line_count)"
+            exit 1
+        fi
+        
+        echo "待更新域名数: $RECORD_COUNT"
+        echo "待处理IP总数: $line_count"
+        log_info "Using ${specific_log} with $line_count IPs"
+        
+        # Use specific log file
+        local result_csv="$specific_log"
+        local start=2
+        local rows=$((RECORD_COUNT + 1))
+        
+        aggregate_from_csv "$result_csv" "$start" "$rows"
+    else
+        # Aggregate from all region logs
+        log_info "Aggregating from all region logs..."
+        
+        local cdn_csv="${log_dir}/CDN.csv"
+        > "$cdn_csv"  # Clear/create file
+        
+        # Get all CSV files except CDN.csv
+        local log_files=()
+        for f in "${log_dir}"/*.csv; do
+            [[ "$f" != "$cdn_csv" && -f "$f" ]] && log_files+=("$f")
+        done
+        
+        local total_lines=0
+        for file in "${log_files[@]}"; do
+            # Extract 2nd to (area_per_region+1)th lines
+            sed -n "2,$((AREA_PER_REGION+1))p" "$file" >> "$cdn_csv"
+        done
+        
+        local line_count=$(wc -l < "$cdn_csv")
+        
+        # Increase area_per_region if not enough IPs
+        while [[ "$RECORD_COUNT" -gt "$line_count" ]]; do
+            log_warn "Need more IPs, increasing area_per_region..."
+            ((AREA_PER_REGION++))
+            > "$cdn_csv"
+            for file in "${log_files[@]}"; do
+                sed -n "2,$((AREA_PER_REGION+1))p" "$file" >> "$cdn_csv"
+            done
+            line_count=$(wc -l < "$cdn_csv")
+        done
+        
+        echo "待更新域名数: $RECORD_COUNT"
+        echo "待处理IP总数: $line_count"
+        
+        aggregate_from_csv "$cdn_csv" 1 "$RECORD_COUNT"
+    fi
+}
+
+# Aggregate IPs from a CSV file
+aggregate_from_csv() {
+    local csv_file="$1"
+    local start="$2"
+    local rows="$3"
+    
+    log_info "Updating DNS from $csv_file (lines $start to $rows)"
+    
+    local count=0
+    local tg_message="CDN 更新完成！%0A域名: ${RECORD_NAME}.${ZONE_NAME}"
+    
+    sed -n "${start},${rows}p" "$csv_file" | while read -r line; do
+        local ip="${line%%,*}"
+        [[ -z "$ip" ]] && continue
+        
+        # Update DNS record
+        local result
+        result=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_IDENTIFIER}/dns_records/${RECORD_IDENTIFIER}" \
+            -H "X-Auth-Email: ${AUTH_EMAIL}" \
+            -H "X-Auth-Key: ${AUTH_KEY}" \
+            -H "Content-Type: application/json" \
+            --data "{
+                \"type\": \"A\",
+                \"name\": \"${RECORD_NAME}.${ZONE_NAME}\",
+                \"content\": \"${ip}\",
+                \"ttl\": 60,
+                \"proxied\": false
+            }")
+        
+        if echo "$result" | jq -rq '.success' 2>/dev/null; then
+            log_info "${RECORD_NAME}.${ZONE_NAME} -> ${ip} [OK]"
+            tg_message="${tg_message}%0A${RECORD_NAME}.${ZONE_NAME} -> ${ip} [OK]"
+        else
+            local msg
+            msg=$(echo "$result" | jq -r '.errors[0].message' 2>/dev/null || echo "Unknown error")
+            log_error "Update failed: $msg"
+            tg_message="${tg_message}%0A${RECORD_NAME}.${ZONE_NAME} -> FAILED"
+        fi
+        
+        # Get next record identifier
+        RECORD_IDENTIFIER=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_IDENTIFIER}/dns_records?name=${RECORD_NAME}.${ZONE_NAME}" \
+            -H "X-Auth-Email: ${AUTH_EMAIL}" \
+            -H "X-Auth-Key: ${AUTH_KEY}" \
+            -H "Content-Type: application/json" | jq -r ".[${count}].id" 2>/dev/null)
+        
+        ((count++))
+    done
+    
+    send_notification "$tg_message"
+}
+
+# Main function
+main() {
+    export LANG=zh_CN.UTF-8
+    
+    log_info "=========================================="
+    log_info "Cloudflare CDN Domain Update"
+    log_info "=========================================="
+    
+    # Load config and parse args
+    load_config
+    parse_args "$@"
+    
+    # Validate required params
+    if [[ -z "$AUTH_EMAIL" || -z "$AUTH_KEY" || -z "$ZONE_NAME" ]]; then
+        log_error "Missing required config: auth_email, auth_key, zone_name"
+        exit 1
+    fi
+    
+    # Get CF identifiers
+    get_cf_identifiers
+    
+    # Aggregate and update
+    aggregate_ips
+    
+    log_info "=========================================="
+    log_info "CDN update completed!"
+    log_info "=========================================="
+}
+
+# Run main
+main "$@"

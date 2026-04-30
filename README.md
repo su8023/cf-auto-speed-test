@@ -1,374 +1,157 @@
-# [am-cf-auto-speed-test](https://github.com/ansoncloud8/am-cf-auto-speed-test)
-▶️ **新人[YouTube](https://youtube.com/@AM_CLUB)** 需要您的支持，请务必帮我**点赞**、**关注**、**打开小铃铛**，***十分感谢！！！*** ✅
-</br>🎁 不要只是下载或Fork。请 **follow** 我的GitHub、给我所有项目一个 **Star** 星星（拜托了）！你的支持是我不断前进的动力！ 💖
-</br>✅**解锁更多技术请访问[【个人博客】](https://am.809098.xyz)**
-#
-# 免责声明
+# Cloudflare Auto Speed Test
 
-### 用途
-该项目被设计和开发仅供学习、研究和安全测试目的。它旨在为安全研究者、学术界人士和技术爱好者提供一个了解和实践网络通信技术的工具。
+自动测速 Cloudflare 优选 IP 并更新至 Cloudflare DNS 记录的自动化脚本。
 
-### 合法性
-使用者在下载和使用该项目时，必须遵守当地法律和规定。使用者有责任确保他们的行为符合其所在地区的法律、规章以及其他适用的规定。
+## 功能特性
 
-### 免责
-1. 作为该项目的作者，我（以下简称“作者”）强调该项目应仅用于合法、道德和教育目的。
-2. 作者不鼓励、不支持也不促进任何形式的非法使用该项目。如果发现该项目被用于非法或不道德的活动，作者将强烈谴责这种行为。
-3. 作者对任何人或团体使用该项目进行的任何非法活动不承担责任。使用者使用该项目时产生的任何后果由使用者本人承担。
-4. 作者不对使用该项目可能引起的任何直接或间接损害负责。
-5. 通过使用该项目，使用者表示理解并同意本免责声明的所有条款。如果使用者不同意这些条款，应立即停止使用该项目。
+- 支持单域名对多 IP 测速更新 (speed_AIO.sh)
+- 支持单域名对单 IP 测速更新 (speed.sh)
+- 支持多地区 IP 汇总更新 (CDNDomainUpdate.sh)
+- 自动按国家/地区分类 IP
+- 支持自定义测速端口 (443, 2053, 2083, 2087, 2096, 8443)
+- 支持 Telegram/飞书 Webhook 推送通知
+- Web 测速结果展示面板 (Flask Dashboard)
 
-作者保留随时更新本免责声明的权利，且不另行通知。最新的免责声明版本将会在该项目的 GitHub 页面上发布。
-
-这是一个自动测速CF优选IP后将IP更新至CF域名A记录的自动化脚本
-
-测试运行环境ubuntu-18.04-standard_18.04.1-1_amd64
-
-## 1. 单域名对单IP，测速并更新
-<details>
-<summary><code><strong>「 点击查看 speed.sh 脚本使用示例 」</strong></code></summary>
-一键脚本
- 
-``` bash
-$ wget -N -P cs https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/speed.sh && cd cs && chmod +x speed.sh 
-$ sh speed.sh [测速国家代码] [端口] [域名数量] [主域名] [CloudFlare账户邮箱] [CloudFlare账户key] [自定义测速地址]
-```
-| 参数名| 中文解释| 一键脚本参数必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| area_GEC |测速国家代码 |√ | hk、sg、kr、jp、us等常用国家代码，默认hk |
-| port |端口  | √ | 443、2053、2083、2087、2096、8443，默认443 |
-| record_count |域名数量 | √ | 默认4 |
-| zone_name |主域名 | √ | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | √ | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | √ | 默认xxxxxxxxxxxxxxx |
-| speedurl |自定义测速地址 | × | 默认https://vipcs.cloudflarest.link |
-
-## 事前准备
-~~运行前先去CloudFlare创建4条A记录,A记录IP随意即可~~ 直接运行即可
-```
-默认 香港地区,端口443,数量4
-hk-443-1.xxxx.com
-hk-443-2.xxxx.com
-hk-443-3.xxxx.com
-hk-443-4.xxxx.com
-
-如需自定义地区端口数量可自行调整
-[测速国家代码]-[端口]-[域名数量].[主域名]
-
-例如:
-脚本命令:
-sh speed.sh kr
-对应创建域名
-kr-443-1.xxxx.com
-kr-443-2.xxxx.com
-kr-443-3.xxxx.com
-kr-443-4.xxxx.com
-
-脚本命令:
-sh speed.sh jp 8443
-对应创建域名
-jp-8443-1.xxxx.com
-jp-8443-1.xxxx.com
-jp-8443-1.xxxx.com
-jp-8443-1.xxxx.com
-
-脚本命令:
-sh speed.sh jp 2096 2 google.com
-对应创建域名
-jp-2096-1.google.com
-jp-2096-2.google.com
+## 项目结构
 
 ```
-
-## 手动运行:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
-```
-
-修改后运行以下命令即可
-``` bash
-sh speed.sh                       #测速默认香港地区,默认端口443,默认数量4,修改域名为默认    hk-443-[1~4].xxxx.com
-sh speed.sh kr                    #测速韩国地区,默认端口443,默认数量4,修改域名为默认        kr-443-[1~4].xxxx.com
-sh speed.sh jp 8443               #测速日本地区,自定义端口8443,默认数量4,修改域名为默认     jp-8443-[1~4].xxxx.com
-sh speed.sh jp 2096 2 google.com  #测速日本地区,自定义端口2096,自定义数量2,修改自定义域名为 jp-2096-[1~2].google.com
+cf-auto-speed-test/
+├── config.conf          # 配置文件
+├── speed_AIO.sh        # 单域名对多IP测速
+├── speed.sh            # 单域名对单IP测速
+├── CDNDomainUpdate.sh   # 汇总更新
+├── Domain2IP.py        # 域名转IP
+├── RemoveCFIPs.py       # 过滤官方CF IP
+├── app_dashboard.py     # Web测速面板
+├── GeoLite2-Country.mmdb
+└── README.md
 ```
 
-## 定时任务:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
-```
-| 参数名| 中文解释| 修改`auth_email`、`auth_key`、`zone_name`值之后的必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| area_GEC |测速国家代码 |× | hk、sg、kr、jp、us等常用国家代码，默认hk |
-| port |端口  | × | 443、2053、2083、2087、2096、8443，默认443 |
-| record_count |域名数量 | × | 默认4 |
-| zone_name |主域名 | × | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | × | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | × | 默认xxxxxxxxxxxxxxx |
-| speedurl |自定义测速地址 | × | 默认https://vipcs.cloudflarest.link |
+## 快速开始
 
-默认测速端口是443,默认测速域名数量为4
-``` bash
-cd /root/cs && chmod +x speed.sh && sh speed.sh hk                    #测速香港地区,默认端口443,默认数量4,修改域名为默认        hk-443-[1~4].xxxx.com
-cd /root/cs && chmod +x speed.sh && sh speed.sh kr                    #测速韩国地区,默认端口443,默认数量4,修改域名为默认        kr-443-[1~4].xxxx.com
-cd /root/cs && chmod +x speed.sh && sh speed.sh jp 8443               #测速日本地区,自定义端口8443,默认数量4,修改域名为默认     jp-8443-[1~4].xxxx.com
-cd /root/cs && chmod +x speed.sh && sh speed.sh jp 2096 2 google.com  #测速日本地区,自定义端口2096,自定义数量2,修改自定义域名为 jp-2096-[1~2].google.com
+### 1. 安装依赖
+
+```bash
+sudo apt update
+sudo apt install -y git curl unzip awk jq python3 python3-pip geoip-bin mmdb-bin
 ```
 
-## 文件结构
-运行脚本后会自动下载所需文件,所以推荐将脚本放在单独目录下运行
-```
-cs
- ├─ speed.sh        #脚本本体
- ├─ CloudflareST    #CloudflareST测速程序
- ├─ ip              #测速地区ip库
- │   ├─ HK-443.txt
- │   ├─ JP-443.txt
- │  ...
- │   └─ US-443.txt
- ├─ log             #测速结果
- │   ├─ HK-443.csv
- │   ├─ JP-443.csv
- │  ...
- │   └─ US-443.csv
- ├─ temp            #整理IP库的临时文件夹
- │   ├─ 132203-1-443.txt
- │  ...
- │   └─ hello-earth-ip.txt
- ├─ ip-443.txt      #指定端口的完整不分区IP库
-...
- └─ ip-8443.txt
-```
-</details>
+### 2. 配置
 
-****
+编辑 `config.conf`:
 
-## 2. 单域名对多IP，测速并更新
-<details>
-<summary><code><strong>「 点击查看 speed_AIO.sh 脚本使用示例 」</strong></code></summary>
-一键脚本
- 
-``` bash
-$ wget -N -P cs https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/speed_AIO.sh && cd cs && chmod +x speed_AIO.sh 
-$ sh speed_AIO.sh [测速国家代码] [端口] [IP数量] [主域名] [CloudFlare账户邮箱] [CloudFlare账户key] [自定义测速地址]
-```
-| 参数名| 中文解释| 一键脚本参数必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| area_GEC |测速国家代码 |√ | hk、sg、kr、jp、us等常用国家代码，默认hk |
-| port |端口  | √ | 443、2053、2083、2087、2096、8443，默认443 |
-| ips |域名数量 | √ | 默认4 |
-| zone_name |主域名 | √ | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | √ | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | √ | 默认xxxxxxxxxxxxxxx |
-| speedurl |自定义测速地址 | × | 默认https://vipcs.cloudflarest.link |
+```bash
+auth_email="your@email.com"
+auth_key="your_cf_key"
+zone_name="example.com"
+githubID="your_github_id"
 
-## 事前准备
-~~运行前先去CloudFlare创建对应测速域名的A记录，A记录IP随意即可~~
+# 飞书推送 (可选，留空禁用)
+feishu_webhook="https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
 
-~~**注意：您想获取多少IP数量就对应创建多少A记录，如使用默认443端口,则二级域名后可不带端口**~~
-
-## 手动运行:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
+# Telegram推送 (可选，留空禁用)
+telegramBotToken=""
+telegramBotUserId=""
+telegramBotAPI=""
 ```
 
-修改后运行以下命令即可
-``` bash
-sh speed_AIO.sh                       #测速默认香港地区,默认端口443,修改域名为默认    hk.xxxx.com
-sh speed_AIO.sh kr                    #测速韩国地区,默认端口443,修改域名为默认        kr.xxxx.com
-sh speed_AIO.sh jp 8443 6             #测速日本地区,自定义端口8443,修改域名为默认     jp-8443.xxxx.com 6条IP记录
-sh speed_AIO.sh jp 2096 8 google.com  #测速日本地区,自定义端口2096,修改自定义域名为     jp-2096.google.com 8条IP记录
+### 3. 运行脚本
+
+```bash
+chmod +x speed_AIO.sh speed.sh CDNDomainUpdate.sh
+
+# 单域名对多IP (默认香港, 443端口, 4个IP)
+./speed_AIO.sh
+
+# 指定参数: 地区 端口 IP数量 域名
+./speed_AIO.sh kr 443 6 example.com
+
+# 单域名对单IP
+./speed.sh hk 443 4 example.com
+
+# 汇总更新
+./CDNDomainUpdate.sh cdn example.com
 ```
 
-## 定时任务:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
-```
-| 参数名| 中文解释| 修改`auth_email`、`auth_key`、`zone_name`值之后的必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| area_GEC |测速国家代码 |× | hk、sg、kr、jp、us等常用国家代码，默认hk |
-| port |端口  | × | 443、2053、2083、2087、2096、8443，默认443 |
-| ips |域名数量 | × | 默认4 |
-| zone_name |主域名 | × | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | × | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | × | 默认xxxxxxxxxxxxxxx |
-| speedurl |自定义测速地址 | × | 默认https://vipcs.cloudflarest.link |
+## 脚本参数说明
 
-默认测速端口是443,默认测速域名数量为4
-``` bash
-cd /root/cs && chmod +x speed_AIO.sh && sh speed_AIO.sh hk                    #测速香港地区,默认端口443,修改域名为默认        hk.xxxx.com
-cd /root/cs && chmod +x speed_AIO.sh && sh speed_AIO.sh kr                    #测速韩国地区,默认端口443,修改域名为默认        kr.xxxx.com
-cd /root/cs && chmod +x speed_AIO.sh && sh speed_AIO.sh jp 8443               #测速日本地区,自定义端口8443,,修改域名为默认     jp-8443.xxxx.com
-cd /root/cs && chmod +x speed_AIO.sh && sh speed_AIO.sh jp 2096 6 google.com  #测速日本地区,自定义端口2096,修改自定义域名为      jp-2096.google.com
-```
+### speed_AIO.sh (单域名对多IP)
 
-## 文件结构
-运行脚本后会自动下载所需文件,所以推荐将脚本放在单独目录下运行
-```
-cs
- ├─ speed_AIO.sh        #脚本本体
- ├─ CloudflareST    #CloudflareST测速程序
- ├─ ip              #测速地区ip库
- │   ├─ HK-443.txt
- │   ├─ JP-443.txt
- │  ...
- │   └─ US-443.txt
- ├─ log             #测速结果
- │   ├─ HK-443.csv
- │   ├─ JP-443.csv
- │  ...
- │   └─ US-443.csv
- ├─ temp            #整理IP库的临时文件夹
- │   ├─ 132203-1-443.txt
- │  ...
- │   └─ hello-earth-ip.txt
- ├─ ip-443.txt      #指定端口的完整不分区IP库
-...
- └─ ip-8443.txt
-```
-</details>
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| $1 | 地区代码 (hk/sg/kr/jp/us) | hk |
+| $2 | 端口 | 443 |
+| $3 | IP数量 | 4 |
+| $4 | 主域名 | config.conf |
+| $5 | CloudFlare邮箱 | config.conf |
+| $6 | CloudFlare API Key | config.conf |
+| $7 | 自定义测速URL | 官方测速 |
 
-****
+### speed.sh (单域名对单IP)
 
-## ~~3. 单域名对多地区IP，汇总更新（无测速内容，只汇总更新域名）~~ 不实用，不维护了
-<details>
-<summary><code><strong>「 点击查看 CDNDomainUpdate.sh 脚本使用示例 」</strong></code></summary>
-一键脚本
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| $1 | 地区代码 | hk |
+| $2 | 端口 | 443 |
+| $3 | 域名记录数 | 4 |
+| $4 | 主域名 | config.conf |
+| $5 | CloudFlare邮箱 | config.conf |
+| $6 | CloudFlare API Key | config.conf |
+| $7 | 自定义测速URL | 官方测速 |
 
-**注意：CDNDomainUpdate.sh 脚本必须与 测速结果log文件夹同目录**
+### CDNDomainUpdate.sh (汇总更新)
 
-``` bash
-$ wget -N -P cs https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/CDNDomainUpdate.sh && cd cs && chmod +x CDNDomainUpdate.sh
-$ sh CDNDomainUpdate.sh [汇总二级域名] [主域名] [CloudFlare账户邮箱] [CloudFlare账户key] 
-```
-| 参数名| 中文解释| 一键脚本参数必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| record_name | 汇总二级域名 |√ | 默认cdn,如只更新特定地区可填写hk、sg、kr、jp、us等常用国家代码， |
-| zone_name |主域名 | √ | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | √ | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | √ | 默认xxxxxxxxxxxxxxx |
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| $1 | 二级域名前缀 (cdn/hk/sg...) | cdn |
+| $2 | 主域名 | config.conf |
+| $3 | CloudFlare邮箱 | config.conf |
+| $4 | CloudFlare API Key | config.conf |
 
-## 事前准备
-运行前先去CloudFlare创建对应测速域名的A记录，A记录IP随意即可
+## Web 测速面板
 
-**注意：您想汇总多少IP数量就对应创建多少A记录**
+启动 Flask Dashboard:
 
-```
-默认 二级域名cdn，汇总逻辑，在测速记录文件夹每个地区443端口各提取1条IP更新，如IP不够域名数量会继续增加各个地区IP数量
-
-如需自定义地区端口数量可自行调整，
-[二级域名].[主域名]
-
-例如:
-脚本命令:
-sh CDNDomainUpdate.sh
-对应创建域名
-cdn.xxxx.com 
-cdn.xxxx.com 
-cdn.xxxx.com 
-cdn.xxxx.com 
-
-脚本命令:
-sh CDNDomainUpdate.sh sp
-对应创建域名
-sp.xxxx.com
-sp.xxxx.com
-sp.xxxx.com
-sp.xxxx.com
-
-脚本命令:
-如只更新特定地区可填写hk、sg、kr、jp、us等常用国家代码
-sh CDNDomainUpdate.sh hk
-对应创建域名
-hk.xxxx.com
-hk.xxxx.com
-hk.xxxx.com
-hk.xxxx.com
-
-脚本命令:
-sh CDNDomainUpdate.sh jp google.com
-对应创建域名
-jp.google.com
-jp.google.com
-
+```bash
+pip3 install flask
+python3 app_dashboard.py
 ```
 
-## 手动运行:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
-```
+访问 `http://your-server:5001`
 
-修改后运行以下命令即可
-``` bash
-sh CDNDomainUpdate.sh                 #更新汇总IP至默认域名       cdn.xxxx.com
-sh CDNDomainUpdate.sh sp              #更新汇总IP至自定义域名     sp.xxxx.com
-sh CDNDomainUpdate.sh hk              #更新香港地区IP至对应域名   hk.xxxx.com
-sh CDNDomainUpdate.sh jp google.com   #更新日本地区IP至对应域名   jp.google.com
-```
+- 显示各地区最优 IP 列表
+- 显示历史测速记录
+- JSON API: `/api/results`
 
-## 定时任务:
-先修改speed.sh脚本内`auth_email`、`auth_key`、`zone_name`的值
-```
-auth_email="xxxx@gmail.com"  #你的CloudFlare注册账户邮箱 *必填
-auth_key="xxxxxxxxxxxxxxx"   #你的CloudFlare账户key,位置在域名概述页面点击右下角获取api key。*必填
-zone_name="xxxx.com"         #你的主域名 *必填
-```
-| 参数名| 中文解释| 修改`auth_email`、`auth_key`、`zone_name`值之后的必填项 | 备注(注意!参数必须按顺序填写)  |
-|--------------------------|----------------|-----------------|-----------------|
-| record_name | 汇总二级域名 |√ | 默认cdn,如只更新特定地区可填写hk、sg、kr、jp、us等常用国家代码， |
-| zone_name | 主域名 | √ | 默认xxxx.com |
-| auth_email | CloudFlare账户邮箱 | √ | 默认xxxx@gmail.com |
-| auth_key |CloudFlare账户key | √ | 默认xxxxxxxxxxxxxxx |
+## 多域名批量更新
 
-默认测速端口是443,默认测速域名数量为4
-``` bash
-cd /root/cs && chmod +x CDNDomainUpdate.sh && sh CDNDomainUpdate.sh                 #更新汇总IP至默认域名       cdn.xxxx.com
-cd /root/cs && chmod +x CDNDomainUpdate.sh && sh CDNDomainUpdate.sh sp              #更新汇总IP至自定义域名     sp.xxxx.com
-cd /root/cs && chmod +x CDNDomainUpdate.sh && sh CDNDomainUpdate.sh hk              #更新香港地区IP至对应域名   hk.xxxx.com
-cd /root/cs && chmod +x CDNDomainUpdate.sh && sh CDNDomainUpdate.sh jp google.com   #更新日本地区IP至对应域名   jp.google.com
-```
-
-## 文件结构
-```
-cs
- ├─ CDNDomainUpdate.sh        #脚本本体
- └─ log             #测速结果
-     ├─ CDN.csv     #创建汇总IP结果
-     ├─ HK-443.csv
-     ├─ JP-443.csv
-    ...
-     └─ US-443.csv
+创建 `Domain.txt` 文件，每行一个域名:
 
 ```
-</details>
+domain1.com
+domain2.com
+domain3.com
+```
 
-#### speed脚本内有 telegram 推送配置，有需要运行前自行填写telegram参数。
+脚本将自动解析域名对应的 IP 并加入测速池。
 
- #
-▶️ **新人[YouTube](https://youtube.com/@AM_CLUB)** 需要您的支持，请务必帮我**点赞**、**关注**、**打开小铃铛**，***十分感谢！！！*** ✅
-</br>🎁 不要只是下载或Fork。请 **follow** 我的GitHub、给我所有项目一个 **Star** 星星（拜托了）！你的支持是我不断前进的动力！ 💖
-  
- # 
-<center><details><summary><strong> [点击展开] 赞赏支持 ~🧧</strong></summary>
-*我非常感谢您的赞赏和支持，它们将极大地激励我继续创新，持续产生有价值的工作。*
-  
-- **USDT-TRC20:** `TWTxUyay6QJN3K4fs4kvJTT8Zfa2mWTwDD`
-  
-</details></center>
+## 定时任务示例
 
+```bash
+# 每6小时执行一次
+0 */6 * * * cd /path/to/cf-auto-speed-test && ./speed_AIO.sh hk 443 4 example.com
 
+# 每日凌晨3点执行
+0 3 * * * cd /path/to/cf-auto-speed-test && ./speed_AIO.sh kr 443 6 example.com
+```
+
+## 注意事项
+
+- 脚本需在 Ubuntu 18.04+ 环境运行
+- 运行前确保本机网络未使用代理 (仅限中国 IP)
+- 建议提前在 Cloudflare 创建好对应的 DNS 记录
+- 飞书/Telegram 推送可选择性配置，留空则不推送
+
+## License
+
+MIT License
