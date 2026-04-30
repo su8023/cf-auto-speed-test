@@ -32,7 +32,7 @@ TELEGRAM_BOT_USER_ID=""
 TELEGRAM_BOT_API=""
 
 # Internal vars
-PROXY_GITHUB="https://mirror.ghproxy.com/"
+PROXY_GITHUB=""
 CLOUDFLARE_ST_PASSWORD=""
 SPEED_URL=""
 LOG_DIR="log"

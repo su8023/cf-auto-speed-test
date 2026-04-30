@@ -23,7 +23,7 @@ CF_IPS=0
 AUTH_EMAIL=""
 AUTH_KEY=""
 ZONE_NAME=""
-GITHUB_ID="ansoncloud8"
+GITHUB_ID="su8023"
 
 # Notification config
 FEISHU_WEBHOOK=""
@@ -32,7 +32,7 @@ TELEGRAM_BOT_USER_ID=""
 TELEGRAM_BOT_API=""
 
 # Internal vars
-PROXY_GITHUB="https://mirror.ghproxy.com/"
+PROXY_GITHUB=""
 CLOUDFLARE_ST_PASSWORD=""
 SPEED_URL=""
 LOG_DIR="log"
@@ -108,7 +108,7 @@ download_geolite_mmdb() {
         log_info "Downloading GeoLite2-Country.mmdb..."
         mkdir -p /usr/share/GeoIP
         curl -sL "${PROXY_GITHUB}https://github.com/P3TERX/GeoLite.mmdb/releases/download/latest/GeoLite2-Country.mmdb" -o "$mmdb_path" || \
-        curl -sL "https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/GeoLite2-Country.mmdb" -o "$mmdb_path"
+        curl -sL "https://raw.githubusercontent.com/su8023/cf-auto-speed-test/main/GeoLite2-Country.mmdb" -o "$mmdb_path"
     fi
 }
 
@@ -228,7 +228,7 @@ update_ip_library() {
         if [[ -f "Domain2IP.py" ]]; then
             python3 Domain2IP.py
         else
-            curl -s -o Domain2IP.py "${PROXY_GITHUB}https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/Domain2IP.py"
+            curl -s -o Domain2IP.py "${PROXY_GITHUB}https://raw.githubusercontent.com/su8023/cf-auto-speed-test/main/Domain2IP.py"
             python3 Domain2IP.py 2>/dev/null || true
         fi
     fi
@@ -255,7 +255,7 @@ filter_cf_ips() {
     install_python_deps
     
     if [[ ! -f "RemoveCFIPs.py" ]]; then
-        curl -s -o RemoveCFIPs.py "${PROXY_GITHUB}https://raw.githubusercontent.com/ansoncloud8/am-cf-auto-speed-test/main/RemoveCFIPs.py"
+        curl -s -o RemoveCFIPs.py "${PROXY_GITHUB}https://raw.githubusercontent.com/su8023/cf-auto-speed-test/main/RemoveCFIPs.py"
     fi
     
     if [[ -f "RemoveCFIPs.py" ]]; then

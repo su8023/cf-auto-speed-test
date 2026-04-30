@@ -186,13 +186,15 @@ download_latest() {
     mkdir -p "$INSTALL_DIR"
 
     info "下载脚本文件..."
-    for file in speed_AIO.sh speed.sh CDNDomainUpdate.sh Domain2IP.py RemoveCFIPs.py app_dashboard.py config.conf; do
+    for file in speed_AIO.sh speed.sh CDNDomainUpdate.sh Domain2IP.py RemoveCFIPs.py app_dashboard.py config.conf.example; do
         info "  下载 $file..."
         wget -q -O "$INSTALL_DIR/$file" "${GITHUB_RAW}/${file}" || {
             error "$file 下载失败"
             exit 1
         }
     done
+    # 重命名为 config.conf（用户实际配置文件）
+    mv "$INSTALL_DIR/config.conf.example" "$INSTALL_DIR/config.conf"
 
     chmod +x "$INSTALL_DIR"/*.sh
     success "下载完成 → $INSTALL_DIR"
@@ -281,9 +283,6 @@ feishu_webhook="${feishu_webhook}"
 telegramBotToken=""
 telegramBotUserId=""
 telegramBotAPI=""
-
-# Proxy for GitHub (leave empty to disable)
-proxygithub="https://mirror.ghproxy.com/"
 EOF
 
     success "配置文件已保存"

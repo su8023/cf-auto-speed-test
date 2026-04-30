@@ -194,10 +194,10 @@ CloudFlare API Key [输入回车保留上次的]:
 ### 第八步：GitHub IP 库 ID
 
 ```
-GitHub IP 库 ID [ansoncloud8]:
+GitHub IP 库 ID [su8023]:
 ```
 
-IP 素材来源，填 `ansoncloud8` 或其他 CF IP 收集者的 GitHub 用户名。直接回车默认即可。
+IP 素材来源，填 `su8023` 或其他 CF IP 收集者的 GitHub 用户名。直接回车默认即可。
 
 ---
 

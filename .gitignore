@@ -1,0 +1,20 @@
+# User config (contains API keys)
+config.conf
+
+# Temporary files
+temp/
+*.tmp
+*.log
+
+# CloudflareST binary
+CloudflareST
+
+# Downloaded DB（其他临时下载的 mmdb）
+*.mmdb
+!GeoLite2-Country.mmdb
+
+# Domain list
+Domain.txt
+
+# Archived results
+result*/
